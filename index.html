@@ -1,0 +1,795 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Expiry Returns">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#0a6b5c">
+<title>Expiry Returns</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@600&display=swap">
+<style>
+:root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+body { margin: 0; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+/* Layout: file-folder tabs (one per dealer) joined to a paper sheet that mirrors the printed
+   EXPIRY/BREAKAGE GOODS FORMAT. Scan controls dock at the bottom for the thumb. Scan results
+   that need attention appear as small cards above the sheet and never block scanning. */
+:root {
+  --bg: #eef1f3;
+  --surface: #ffffff;
+  --ink: #15212b;
+  --muted: #5a6a77;
+  --line: #d5dce1;
+  --field: #f5f7f8;
+  --accent: #0a6b5c;
+  --accent-ink: #ffffff;
+  --accent-soft: #d9eee8;
+  --warn: #8a5300;
+  --warn-soft: #fcefd3;
+  --danger: #b3261e;
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1418; --surface: #161e24; --ink: #e6edf1; --muted: #93a4b1; --line: #2c3842; --field: #1c262d;
+    --accent: #3ec1a8; --accent-ink: #04211b; --accent-soft: #123a33; --warn: #f0b24a; --warn-soft: #3a2d12; --danger: #ff8a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1418; --surface: #161e24; --ink: #e6edf1; --muted: #93a4b1; --line: #2c3842; --field: #1c262d;
+  --accent: #3ec1a8; --accent-ink: #04211b; --accent-soft: #123a33; --warn: #f0b24a; --warn-soft: #3a2d12; --danger: #ff8a80;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.4;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 14px 0;
+}
+.app { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; min-height: 100%; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; }
+.brand { font-family: var(--font-display); font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
+.top-r { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.save { font-size: 13px; color: var(--muted); }
+
+.btn {
+  appearance: none; font: inherit; font-weight: 500; font-size: 16px; min-height: 46px; padding: 0 18px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; position: relative;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.ghost { background: transparent; }
+.btn.small { min-height: 40px; font-size: 14px; padding: 0 12px; }
+.btn.danger { color: var(--danger); border-color: var(--danger); }
+.btn[disabled] { opacity: .45; cursor: default; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, .tab:focus-visible, .tx:focus-visible, .del:focus-visible, .filebtn:focus-within {
+  outline: 3px solid var(--accent); outline-offset: 1px;
+}
+.filebtn input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 16px; }
+
+/* tabs */
+.tabs { display: flex; align-items: flex-end; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tw { display: flex; align-items: center; flex: none; border: 1px solid transparent; border-bottom: 0; border-radius: 10px 10px 0 0; }
+.tw.active { background: var(--surface); border-color: var(--line); margin-bottom: -1px; }
+.tab { min-height: 46px; padding: 0 14px; background: transparent; border: 0; font: inherit; color: var(--muted); max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.tw.active .tab { color: var(--ink); font-weight: 600; }
+.tx { background: transparent; border: 0; color: var(--muted); font: inherit; font-size: 20px; min-width: 36px; min-height: 40px; cursor: pointer; border-radius: 8px; margin-right: 4px; line-height: 1; }
+.tx.sure { color: var(--danger); font-size: 14px; font-weight: 600; padding: 0 10px; }
+.addtab { flex: none; min-width: 46px; min-height: 46px; border: 0; background: transparent; font: inherit; font-size: 26px; color: var(--accent); cursor: pointer; border-radius: 10px; line-height: 1; }
+.addtab:hover { background: var(--accent-soft); }
+
+/* scan task cards */
+#tasks { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+.task { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: flex; gap: 12px; min-width: 0; }
+.task.attn { border-color: var(--warn); }
+.thumbs { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.thumbs img { width: 52px; height: 52px; object-fit: cover; border-radius: 8px; background: var(--field); display: block; }
+.t-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.t-title { font-weight: 600; font-size: 15px; }
+.t-sub { font-size: 14px; color: var(--muted); }
+.t-for { font-size: 12px; color: var(--muted); }
+.t-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.bar-ind { height: 4px; border-radius: 2px; background: var(--accent-soft); overflow: hidden; position: relative; }
+.bar-ind::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 35%; background: var(--accent); border-radius: 2px; animation: slide 1.1s ease-in-out infinite; }
+@keyframes slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(300%); } }
+.tf { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.tf label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--muted); min-width: 0; }
+.tf .wide { grid-column: 1 / -1; }
+.tf input { font: inherit; font-size: 16px; color: var(--ink); background: var(--field); border: 1px solid var(--line); border-radius: 8px; min-height: 42px; padding: 0 10px; width: 100%; min-width: 0; }
+.tf input.need { border-color: var(--warn); background: var(--warn-soft); }
+.tf small { color: var(--warn); font-size: 12px; }
+
+/* paper sheet */
+.paper { background: var(--surface); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 12px 12px; padding: 18px 18px 22px; }
+.ptitle { margin: 0 0 14px; text-align: center; font-size: 14px; letter-spacing: .08em; font-weight: 600; }
+.head { display: grid; grid-template-columns: 1fr auto 1fr; gap: 6px 22px; align-items: start; }
+.hcol { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.plabel { font-size: 12px; letter-spacing: .08em; color: var(--muted); min-height: 20px; }
+.line, .frow input[type=text] {
+  font: inherit; font-size: 16px; color: var(--ink); background: transparent; border: 0; border-bottom: 1px dotted var(--muted);
+  min-height: 42px; padding: 0 4px; width: 100%; min-width: 0; border-radius: 0;
+}
+.line:focus, .frow input[type=text]:focus { background: var(--field); border-bottom-style: solid; }
+.gstrow { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+.gstrow span { white-space: nowrap; }
+.ctype .rt { min-height: 42px; display: flex; align-items: center; font-size: 13px; letter-spacing: .06em; color: var(--ink); cursor: pointer; }
+.frow { display: flex; align-items: center; gap: 8px; }
+.frow input[type=radio] { width: 22px; height: 22px; accent-color: var(--accent); flex: none; margin: 0; }
+.frow .dtl { display: none; font-size: 12px; color: var(--muted); min-width: 84px; }
+.rule { border: 0; border-top: 1px solid var(--ink); opacity: .55; margin: 12px 0 10px; }
+.please { font-size: 12px; letter-spacing: .03em; color: var(--muted); margin: 0 0 8px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 980px; }
+th, td { border: 1px solid var(--line); }
+thead th { font-size: 11px; letter-spacing: .06em; font-weight: 600; color: var(--muted); padding: 9px 6px; text-align: center; white-space: nowrap; }
+td { padding: 0; vertical-align: middle; }
+td.sn { width: 52px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+td input, td select {
+  width: 100%; min-height: 48px; padding: 0 8px; font: inherit; font-size: 16px; color: var(--ink);
+  background: transparent; border: 1px solid transparent; border-radius: 0;
+}
+td input:focus, td select:focus { background: var(--field); border-color: var(--accent); }
+td select { padding: 0 4px; }
+td .mono { font-family: var(--font-mono); font-size: 15px; }
+td .num { text-align: right; font-variant-numeric: tabular-nums; }
+td input.need, td select.need { background: var(--warn-soft); }
+.c-hsn { width: 96px; } .c-batch { width: 136px; } .c-exp { width: 112px; } .c-qty { width: 84px; } .c-mrp { width: 100px; } .c-g { width: 84px; }
+td.amt { width: 128px; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; padding: 0 10px; font-weight: 500; }
+td.dc { width: 48px; text-align: center; border-right-color: transparent; border-top-color: transparent; border-bottom-color: transparent; }
+thead th.dc { border-color: transparent; }
+.cn { font-size: 11px; color: var(--muted); padding: 0 8px 4px; line-height: 1.2; }
+.del { appearance: none; border: 0; background: transparent; color: var(--muted); font-size: 24px; width: 44px; height: 44px; border-radius: 8px; cursor: pointer; line-height: 1; }
+.del:hover { color: var(--danger); }
+tr.none td { padding: 26px 12px; text-align: center; color: var(--muted); border-bottom: 1px solid var(--line); }
+tfoot td { padding: 10px; font-weight: 600; }
+tfoot .gl { text-align: right; font-size: 13px; letter-spacing: .08em; }
+tfoot .gv { text-align: right; font-family: var(--font-mono); font-size: 20px; font-weight: 500; color: var(--accent); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tfoot td.dc { border: 0; }
+.foot { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-top: 14px; font-size: 12px; letter-spacing: .03em; color: var(--muted); flex-wrap: wrap; }
+.foot .sig { font-size: 14px; color: var(--ink); padding-right: 40px; padding-top: 30px; }
+tr.flash td { animation: flash 2.6s ease-out; }
+@keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
+
+/* dock */
+.dock {
+  position: sticky; bottom: 0; margin-top: auto; z-index: 5; background: var(--surface); border-top: 1px solid var(--line);
+  margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  display: flex; justify-content: center; align-items: center; gap: 10px 14px; flex-wrap: wrap;
+}
+.steps { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.pill { border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; background: var(--field); white-space: nowrap; }
+.pill.on { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+.pill.done { color: var(--muted); text-decoration: line-through; }
+.dock .btn.primary { min-height: 56px; padding: 0 34px; font-size: 18px; }
+.scan-off { font-size: 14px; color: var(--warn); background: var(--warn-soft); padding: 10px 14px; border-radius: 10px; }
+
+#toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 12px 16px; border-radius: 10px; font-size: 15px; display: flex; gap: 14px; align-items: center; max-width: min(92vw, 520px); z-index: 20;
+}
+#toast[hidden] { display: none; }
+#toast button { background: transparent; border: 0; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; cursor: pointer; min-height: 32px; }
+
+@media (max-width: 760px) {
+  .head { grid-template-columns: 1fr; }
+  .ctype { display: none; }
+  .frow .dtl { display: block; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-ind::after { animation: none; width: 60%; }
+  tr.flash td { animation: none; background: var(--accent-soft); }
+}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">Expiry Returns</div>
+    <div class="top-r">
+      <span class="save" id="saveState" role="status">Saved on this device</span>
+      <button class="btn small ghost" id="pdfOne" type="button" disabled>This dealer only</button>
+      <button class="btn primary" id="pdfAll" type="button" disabled>Export PDF</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Dealer pages"></nav>
+  <div id="tasks" aria-live="polite" hidden></div>
+
+  <main class="paper" id="paper">
+    <h2 class="ptitle">EXPIRY/BREAKAGE GOODS FORMAT</h2>
+    <div class="head">
+      <div class="hcol">
+        <div class="plabel">TO</div>
+        <input class="line" data-b="s.to.0" placeholder="Dealer name" aria-label="Dealer name" autocomplete="off">
+        <input class="line" data-b="s.to.1" placeholder="Address" aria-label="Dealer address, line 1" autocomplete="off">
+        <input class="line" data-b="s.to.2" placeholder="City" aria-label="Dealer address, line 2" autocomplete="off">
+        <div class="gstrow"><span>GST/PAN-</span><input class="line mono" data-b="s.toGst" aria-label="Dealer GST or PAN" autocapitalize="characters" autocomplete="off"></div>
+      </div>
+      <div class="hcol ctype" aria-hidden="true">
+        <div class="plabel">DEALER TYPE</div>
+        <label class="rt" for="dt-registered">REGISTERED</label>
+        <label class="rt" for="dt-unregistered">UNREGISTERED</label>
+        <label class="rt" for="dt-composition">COMPOSITION</label>
+      </div>
+      <div class="hcol">
+        <div class="plabel">FROM</div>
+        <div class="frow"><input type="radio" name="dealer" id="dt-registered" value="registered"><span class="dtl">Registered</span><input type="text" data-b="g.from.0" placeholder="Your shop name" aria-label="Your shop name" autocomplete="off"></div>
+        <div class="frow"><input type="radio" name="dealer" id="dt-unregistered" value="unregistered"><span class="dtl">Unregistered</span><input type="text" data-b="g.from.1" placeholder="Address" aria-label="Your address, line 1" autocomplete="off"></div>
+        <div class="frow"><input type="radio" name="dealer" id="dt-composition" value="composition"><span class="dtl">Composition</span><input type="text" data-b="g.from.2" placeholder="City" aria-label="Your address, line 2" autocomplete="off"></div>
+        <div class="gstrow"><span>GST/PAN-</span><input class="line mono" data-b="g.fromGst" aria-label="Your GST or PAN" autocapitalize="characters" autocomplete="off"></div>
+      </div>
+    </div>
+    <hr class="rule">
+    <p class="please">PLEASE RECEIVE FOLLOWING EXPIRED/BREAKAGE/NON-SALEABLE GOODS.</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>S.No.</th><th>PRODUCT</th><th>HSN CODE</th><th>BATCH</th><th>EXPIRY</th><th>QTY+FREE</th><th>MRP</th><th>PAID GST</th><th>PAID GST</th><th>AMOUNT</th><th class="dc"></th></tr>
+        </thead>
+        <tbody id="rows"></tbody>
+        <tfoot><tr><td colspan="9" class="gl">GRAND TOTAL</td><td class="gv" id="grand">0.00</td><td class="dc"></td></tr></tfoot>
+      </table>
+    </div>
+    <div class="foot">
+      <div>KINDLY ISSUE CREDIT NOTE &amp; ADJUST IN OUR FUTURE INVOICES AS PER GST ACT.<br>THANKS</div>
+      <div class="sig">SEAL &amp; SIGNATURE</div>
+    </div>
+  </main>
+
+  <div class="dock" id="dock">
+    <div class="steps" id="steps"><span class="pill on" id="s1">1 Front</span><span class="pill" id="s2">2 Back</span><span id="stepHint">Front of the pack: product name</span></div>
+    <label class="btn primary filebtn" id="scanLabel"><span id="scanText">Scan front</span>
+      <input type="file" id="cam" accept="image/*" capture="environment" aria-label="Scan with camera">
+    </label>
+    <button class="btn ghost" id="cancelStep" type="button" hidden>Cancel</button>
+    <button class="btn" id="addRow" type="button">Add row</button>
+    <div class="scan-off" id="scanOff" hidden></div>
+  </div>
+</div>
+<div id="toast" role="status" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script>
+(() => {
+  'use strict';
+  const KEY = 'expiry-returns-v2';
+  const $ = (id) => document.getElementById(id);
+  const uid = () => Math.random().toString(36).slice(2, 10);
+  const str = (v) => (v == null ? '' : String(v));
+  const esc = (s) => str(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const num = (v) => { const n = parseFloat(str(v).replace(/,/g, '')); return isFinite(n) && n > 0 ? n : 0; };
+  const fmt = (n) => (Number(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const amt = (r) => { const q = parseInt(r.qty, 10), m = num(r.mrp); return q > 0 && m > 0 ? Math.round(q * m * 100) / 100 : 0; };
+
+  /* ---------------- state ---------------- */
+  const newSheet = () => ({ id: uid(), to: ['', '', ''], toGst: '', rows: [] });
+  const blank = () => { const s = newSheet(); return { sheets: [s], active: s.id, from: ['', '', ''], fromGst: '', dealer: 'registered', updatedAt: 0 }; };
+  const cleanRow = (r) => ({
+    id: r.id || uid(), name: str(r.name), hsn: str(r.hsn), batch: str(r.batch), expiry: str(r.expiry),
+    qty: [1,2,3,4,5,6,7,8,9,10,11,12].indexOf(parseInt(r.qty, 10)) >= 0 ? String(parseInt(r.qty, 10)) : '',
+    mrp: str(r.mrp), g1: str(r.g1), g2: str(r.g2), calc: str(r.calc)
+  });
+  function normalize(o) {
+    const s = blank(); o = o || {};
+    for (let i = 0; i < 3; i++) s.from[i] = str(o.from && o.from[i]);
+    s.fromGst = str(o.fromGst);
+    s.dealer = ['registered', 'unregistered', 'composition'].indexOf(o.dealer) >= 0 ? o.dealer : 'registered';
+    s.updatedAt = Number(o.updatedAt) || 0;
+    const sheets = (Array.isArray(o.sheets) ? o.sheets : []).map((x) => ({
+      id: x.id || uid(), to: [0, 1, 2].map((i) => str(x.to && x.to[i])), toGst: str(x.toGst),
+      rows: (Array.isArray(x.rows) ? x.rows : []).map(cleanRow)
+    }));
+    if (sheets.length) { s.sheets = sheets; }
+    s.active = s.sheets.some((x) => x.id === o.active) ? o.active : s.sheets[0].id;
+    return s;
+  }
+  const loadLocal = () => { try { const t = localStorage.getItem(KEY); if (t) return normalize(JSON.parse(t)); } catch (e) {} return null; };
+  const saveLocal = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); return true; } catch (e) { return false; } };
+  let state = loadLocal() || blank();
+  const sheet = () => state.sheets.find((s) => s.id === state.active) || state.sheets[0];
+  const sheetLabel = (s) => s.to[0].trim() || 'Dealer ' + (state.sheets.indexOf(s) + 1);
+
+  /* ---------------- saving (on this device) ---------------- */
+  const setSave = (t) => { $('saveState').textContent = t; };
+  function touch() { state.updatedAt = Date.now(); setSave(saveLocal() ? 'Saved on this device' : 'Could not save. Storage is blocked.'); }
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+
+  /* ---------------- toast ---------------- */
+  let toastTimer = null;
+  function toast(msg, label, fn) {
+    const t = $('toast'); t.innerHTML = '<span>' + esc(msg) + '</span>';
+    if (label) { const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.onclick = () => { t.hidden = true; fn(); }; t.appendChild(b); }
+    t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 6000);
+  }
+
+  /* ---------------- tabs ---------------- */
+  let sureId = null, sureTimer = null;
+  function renderTabs() {
+    const many = state.sheets.length > 1;
+    $('tabs').innerHTML = state.sheets.map((s) => {
+      const on = s.id === state.active;
+      const x = on && many ? '<button type="button" class="tx' + (sureId === s.id ? ' sure' : '') + '" data-del="' + s.id + '" aria-label="Delete this dealer page">' + (sureId === s.id ? 'Delete?' : '&times;') + '</button>' : '';
+      return '<div class="tw' + (on ? ' active' : '') + '"><button type="button" role="tab" class="tab" aria-selected="' + on + '" data-sid="' + s.id + '">' + esc(sheetLabel(s)) + '</button>' + x + '</div>';
+    }).join('') + '<button type="button" class="addtab" id="addSheet" aria-label="Add a page for another dealer">+</button>';
+  }
+  $('tabs').addEventListener('click', (e) => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.id === 'addSheet') {
+      const s = newSheet(); state.sheets.push(s); state.active = s.id; sureId = null;
+      renderAll(); touch(); const f = document.querySelector('[data-b="s.to.0"]'); if (f) f.focus(); return;
+    }
+    if (t.dataset.sid) { state.active = t.dataset.sid; sureId = null; renderAll(); touch(); return; }
+    if (t.dataset.del) {
+      const s = state.sheets.find((x) => x.id === t.dataset.del); if (!s) return;
+      if (s.rows.length && sureId !== s.id) { sureId = s.id; clearTimeout(sureTimer); sureTimer = setTimeout(() => { sureId = null; renderTabs(); }, 4000); renderTabs(); return; }
+      const i = state.sheets.indexOf(s); state.sheets.splice(i, 1);
+      state.active = state.sheets[Math.max(0, i - 1)].id; sureId = null; renderAll(); touch();
+    }
+  });
+
+  /* ---------------- sheet ---------------- */
+  const bindObj = (w) => (w === 's' ? sheet() : state);
+  function bindGet(b) { const [w, k, i] = b.split('.'); const o = bindObj(w); return i !== undefined ? o[k][+i] : o[k]; }
+  function bindSet(b, v) { const [w, k, i] = b.split('.'); const o = bindObj(w); if (i !== undefined) o[k][+i] = v; else o[k] = v; }
+  document.querySelectorAll('[data-b]').forEach((inp) => {
+    inp.addEventListener('input', () => {
+      bindSet(inp.dataset.b, inp.value);
+      if (inp.dataset.b === 's.to.0') { const a = document.querySelector('.tw.active .tab'); if (a) a.textContent = sheetLabel(sheet()); }
+      touch();
+    });
+  });
+  document.querySelectorAll('input[name=dealer]').forEach((r) => r.addEventListener('change', () => { if (r.checked) { state.dealer = r.value; touch(); } }));
+
+  function rowHtml(r, i) {
+    let opts = '<option value="">–</option>';
+    for (let q = 1; q <= 12; q++) opts += '<option value="' + q + '"' + (r.qty === String(q) ? ' selected' : '') + '>' + q + '</option>';
+    const need = (v) => (str(v).trim() ? '' : ' need');
+    return '<tr data-id="' + r.id + '"><td class="sn">' + (i + 1) + '</td>' +
+      '<td><input type="text" data-f="name" value="' + esc(r.name) + '" aria-label="Product" class="' + need(r.name).trim() + '" autocomplete="off"></td>' +
+      '<td class="c-hsn"><input type="text" data-f="hsn" value="' + esc(r.hsn) + '" aria-label="HSN code" inputmode="numeric" class="mono" autocomplete="off"></td>' +
+      '<td class="c-batch"><input type="text" data-f="batch" value="' + esc(r.batch) + '" aria-label="Batch" autocapitalize="characters" class="mono' + need(r.batch) + '" autocomplete="off"></td>' +
+      '<td class="c-exp"><input type="text" data-f="expiry" value="' + esc(r.expiry) + '" aria-label="Expiry" placeholder="MM/YYYY" class="mono' + need(r.expiry) + '" autocomplete="off">' + (r.calc ? '<div class="cn">' + esc(r.calc) + '</div>' : '') + '</td>' +
+      '<td class="c-qty"><select data-f="qty" aria-label="Quantity plus free" class="' + need(r.qty).trim() + '">' + opts + '</select></td>' +
+      '<td class="c-mrp"><input type="text" data-f="mrp" value="' + esc(r.mrp) + '" aria-label="MRP" inputmode="decimal" class="mono num' + need(r.mrp) + '" autocomplete="off"></td>' +
+      '<td class="c-g"><input type="text" data-f="g1" value="' + esc(r.g1) + '" aria-label="Paid GST" inputmode="decimal" class="mono num" autocomplete="off"></td>' +
+      '<td class="c-g"><input type="text" data-f="g2" value="' + esc(r.g2) + '" aria-label="Paid GST" inputmode="decimal" class="mono num" autocomplete="off"></td>' +
+      '<td class="amt">' + (amt(r) ? fmt(amt(r)) : '') + '</td>' +
+      '<td class="dc"><button type="button" class="del" aria-label="Remove row">&times;</button></td></tr>';
+  }
+  function renderRows() {
+    const rows = sheet().rows;
+    $('rows').innerHTML = rows.length ? rows.map(rowHtml).join('') : '<tr class="none"><td colspan="11">No products yet. Scan the front of a pack to begin.</td></tr>';
+    renderTotals();
+  }
+  function renderTotals() {
+    const rows = sheet().rows; let g = 0; rows.forEach((r) => { g += amt(r); });
+    $('grand').textContent = fmt(Math.round(g * 100) / 100);
+    const any = state.sheets.some((s) => s.rows.length);
+    $('pdfAll').disabled = !any; $('pdfOne').disabled = !rows.length;
+  }
+  function renderBindings() {
+    document.querySelectorAll('[data-b]').forEach((inp) => { inp.value = bindGet(inp.dataset.b); });
+    const r = document.getElementById('dt-' + state.dealer); if (r) r.checked = true;
+  }
+  function renderAll() { renderTabs(); renderBindings(); renderRows(); renderTasks(); }
+
+  const tbody = $('rows');
+  function onEdit(e) {
+    const t = e.target, f = t.dataset && t.dataset.f; if (!f) return;
+    const tr = t.closest('tr'); const r = sheet().rows.find((x) => x.id === tr.dataset.id); if (!r) return;
+    r[f] = t.value;
+    if (['name', 'batch', 'expiry', 'qty', 'mrp'].indexOf(f) >= 0) t.classList.toggle('need', !t.value.trim());
+    if (f === 'expiry' && r.calc) { r.calc = ''; const n = tr.querySelector('.cn'); if (n) n.remove(); }
+    const a = amt(r); tr.querySelector('.amt').textContent = a ? fmt(a) : '';
+    renderTotals(); touch();
+  }
+  tbody.addEventListener('input', onEdit);
+  tbody.addEventListener('change', onEdit);
+  let lastRemoved = null;
+  tbody.addEventListener('click', (e) => {
+    const b = e.target.closest('.del'); if (!b) return;
+    const rows = sheet().rows; const i = rows.findIndex((x) => x.id === b.closest('tr').dataset.id); if (i < 0) return;
+    lastRemoved = { sid: sheet().id, row: rows[i], index: i }; rows.splice(i, 1); renderRows(); touch();
+    toast('Row removed', 'Undo', () => {
+      const s = state.sheets.find((x) => x.id === lastRemoved.sid); if (!s) return;
+      s.rows.splice(Math.min(lastRemoved.index, s.rows.length), 0, lastRemoved.row); lastRemoved = null;
+      if (s.id === state.active) renderRows(); touch();
+    });
+  });
+  $('addRow').addEventListener('click', () => {
+    const r = cleanRow({}); sheet().rows.push(r); renderRows(); touch();
+    const tr = tbody.lastElementChild; if (tr) { const f = tr.querySelector('input'); if (f) f.focus(); }
+  });
+
+  /* ---------------- reading photos ---------------- */
+  /* ---------------- reading photos (on this device, no Claude) ---------------- */
+  const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  function mk(mo, y) { y = +y; return mo >= 1 && mo <= 12 && y >= 2000 && y <= 2045 ? ('0' + mo).slice(-2) + '/' + y : ''; }
+  function normMonth(s, anch) {
+    s = str(s).trim(); if (!s) return '';
+    const a = anch ? '^' : '';
+    let m = s.match(new RegExp(a + '(\\d{1,2})\\s*[\\/\\-. ]\\s*(\\d{1,2})\\s*[\\/\\-. ]\\s*(20\\d{2})\\b'));
+    if (m) return mk(+m[2], m[3]);
+    m = s.match(new RegExp(a + '(\\d{1,2})\\s*[\\/\\-. ]\\s*(20\\d{2})\\b'));
+    if (m) return mk(+m[1], m[2]);
+    m = s.match(new RegExp(a + '(\\d{1,2})\\s*[\\/\\-.]\\s*(\\d{1,2})\\s*[\\/\\-.]\\s*(\\d{2})\\b'));
+    if (m) return mk(+m[2], '20' + m[3]);
+    m = s.match(new RegExp(a + '(\\d{1,2})\\s*[\\/\\-.]\\s*(\\d{2})\\b'));
+    if (m) return mk(+m[1], '20' + m[2]);
+    m = s.match(new RegExp(a + '(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)[A-Z]*[\\s.\\-\\/\']*(20\\d{2}|\\d{2})\\b', 'i'));
+    if (m) return mk(MONTHS.indexOf(m[1].toLowerCase()) + 1, m[2].length === 2 ? '20' + m[2] : m[2]);
+    return '';
+  }
+  const mIndex = (my) => { const [m, y] = my.split('/').map(Number); return y * 12 + (m - 1); };
+  function addMonths(my, n) { const t = mIndex(my) + n; return ('0' + ((t % 12) + 1)).slice(-2) + '/' + Math.floor(t / 12); }
+
+  /* digits that OCR often confuses (O, I, l, |) are repaired only inside number-like tokens */
+  const fixNum = (t) => t.replace(/(^|[^A-Za-z0-9])([0-9OIl|]{2,})(?=$|[^A-Za-z0-9])/g, (m, a, tok) => a + (/\d/.test(tok) ? tok.replace(/[OI|l]/g, (c) => (c === 'O' ? '0' : '1')) : tok));
+  const flat = (s) => s.replace(/[ \t]+/g, ' ').replace(/\n+/g, '  ');
+  const titleCase = (s) => s.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase());
+  const shelfMonths = (n, unit) => { const v = /^Y/i.test(unit) ? +n * 12 : +n; return v >= 1 && v <= 120 ? v : 0; };
+  const JUNK = /MANUFACTURED|MARKETED|MKTD|MFD|MFG|STORE|KEEP|PHARMACIST|SCHEDULE|WARNING|LIMITED|LTD|PVT|COMPOSITION|EACH|CONTAINS|DOSAGE|DIRECTION|BATCH|B\.NO|EXP|M\.?R\.?P/i;
+
+  function pickName(lines, allText) {
+    const L = lines.map((l) => {
+      const t = str(l.text).replace(/[^A-Za-z0-9 .+%\/&-]/g, ' ').replace(/\s+/g, ' ').trim();
+      const letters = (t.match(/[A-Za-z]/g) || []).length;
+      const h = l.bbox ? Math.abs(l.bbox.y1 - l.bbox.y0) : 0;
+      return { t, letters, h, conf: l.confidence == null ? 100 : l.confidence, junk: JUNK.test(t), len: t.replace(/ /g, '').length };
+    }).filter((l) => l.letters >= 3 && l.letters / Math.max(1, l.len) >= 0.4 && !l.junk && l.conf >= 40);
+    if (!L.length) return { name: '', conf: 0 };
+    L.sort((a, b) => b.h - a.h);
+    const big = L[0]; let name = big.t;
+    if (name === name.toUpperCase()) name = titleCase(name);
+    if (!/\d/.test(name)) {
+      const sm = flat(str(allText)).match(/\b(\d{1,4}(?:\.\d+)?)\s?(MG|MCG|ML|GM|IU|G)\b/i);
+      if (sm) name += ' ' + sm[1] + ' ' + sm[2].toLowerCase();
+    }
+    return { name, conf: big.conf };
+  }
+
+  function parseOcr(rawText, lines, kind) {
+    const out = { name: '', batch: '', mrp: '', expiry: '', mfg: '', shelf: 0, unsure: [] };
+    const O = flat(str(rawText).toUpperCase());
+    const T = flat(fixNum(str(rawText)).toUpperCase());
+    const confOf = (needle) => {
+      if (!needle || !lines.length) return 100;
+      const n = needle.replace(/\s/g, '');
+      const l = lines.find((x) => fixNum(str(x.text)).toUpperCase().replace(/\s/g, '').indexOf(n) >= 0 || str(x.text).toUpperCase().replace(/\s/g, '').indexOf(n) >= 0);
+      return l && l.confidence != null ? l.confidence : 100;
+    };
+    const flag = (field, needle) => { const c = confOf(needle); if (c < 65) out.unsure.push({ field, why: 'The reader was not sure (' + Math.round(c) + '% confidence)' }); };
+    let m;
+    // batch
+    const bre = /(?:\bB\.?\s?NO\.?|\bBATCH\s*(?:NO\.?|NUMBER|#)?|\bLOT\s*(?:NO\.?)?)[\s:.\-=#]*([A-Z0-9][A-Z0-9\-\/]{2,14})/g;
+    while ((m = bre.exec(O))) { if (/\d/.test(m[1]) && ['MFG', 'MFD', 'EXP', 'MRP'].indexOf(m[1]) < 0) { out.batch = m[1]; break; } }
+    if (out.batch) flag('batch', out.batch);
+    // expiry date or shelf life
+    const exps = [];
+    const ere = /(?:\bEXP(?:IRY)?\.?(?:\s*DATE)?|USE\s*BEFORE|BEST\s*BEFORE)[\s:.\-=]*([^\n]{0,22})/g;
+    while ((m = ere.exec(T))) {
+      const sm = m[1].match(/^\s*(\d{1,3})\s*(MONTHS?|MTHS?|YEARS?|YRS?)/);
+      if (sm) { if (!out.shelf) out.shelf = shelfMonths(sm[1], sm[2]); continue; }
+      const d = normMonth(m[1], true); if (d && exps.indexOf(d) < 0) exps.push(d);
+    }
+    if (exps.length) { out.expiry = exps[0]; if (exps.length > 1) out.unsure.push({ field: 'expiry', why: 'More than one expiry date was found: ' + exps.join(' and ') }); else flag('expiry', exps[0].slice(0, 2) + '/'); }
+    // manufacturing date
+    const mre = /(?:\bMFG|\bMFD|\bMANUF[A-Z]*|\bDATE\s*OF\s*MFG)\.?(?:\s*DATE)?[\s:.\-=]*([^\n]{0,22})/g;
+    while ((m = mre.exec(T))) { const d = normMonth(m[1], true); if (d) { out.mfg = d; break; } }
+    // shelf life stated in words
+    if (!out.shelf) {
+      let s = T.match(/(\d{1,3})\s*(MONTHS?|MTHS?|YEARS?|YRS?)\s*(?:FROM|OF|AFTER|FRM)?\s*(?:THE\s*)?(?:DATE\s*OF\s*)?(?:MFG|MFD|MANUF)/);
+      if (s) out.shelf = shelfMonths(s[1], s[2]);
+    }
+    // MRP
+    let pm = T.match(/\bM\.?\s?R\.?\s?P\.?[^0-9\n]{0,22}?(\d{1,5}(?:[.,]\d{1,2})?)/) || T.match(/(?:\bRS\.?|\bINR|₹)\s*(\d{1,5}(?:[.,]\d{1,2})?)/);
+    if (pm) { const v = parseFloat(pm[1].replace(',', '.')); if (isFinite(v) && v > 0) { out.mrp = String(v); flag('mrp', pm[1]); } }
+    // name (front of the pack)
+    if (kind === 'front') {
+      const nm = pickName(lines, rawText);
+      out.name = nm.name;
+      if (nm.name && nm.conf < 70) out.unsure.push({ field: 'name', why: 'The reader was not sure (' + Math.round(nm.conf) + '% confidence)' });
+    }
+    return out;
+  }
+
+  function getLines(d) {
+    if (d && Array.isArray(d.lines) && d.lines.length) return d.lines;
+    const out = [];
+    ((d && d.blocks) || []).forEach((b) => (b.paragraphs || []).forEach((p) => (p.lines || []).forEach((l) => out.push(l))));
+    return out;
+  }
+  function loadImg(blob) {
+    return new Promise((res, rej) => { const u = URL.createObjectURL(blob); const i = new Image(); i.onload = () => { URL.revokeObjectURL(u); res(i); }; i.onerror = () => { URL.revokeObjectURL(u); rej(new Error('img')); }; i.src = u; });
+  }
+  /* shrink, rotate, grey and stretch contrast so small print reads better */
+  async function toCanvas(blob, rot) {
+    const img = await loadImg(blob);
+    let w = img.naturalWidth, h = img.naturalHeight; const s = Math.min(1, 1900 / Math.max(w, h));
+    w = Math.round(w * s); h = Math.round(h * s);
+    const c = document.createElement('canvas'); const swap = rot % 180 !== 0; c.width = swap ? h : w; c.height = swap ? w : h;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.translate(c.width / 2, c.height / 2); x.rotate(rot * Math.PI / 180); x.drawImage(img, -w / 2, -h / 2, w, h);
+    const d = x.getImageData(0, 0, c.width, c.height), p = d.data, hist = new Uint32Array(256);
+    for (let i = 0; i < p.length; i += 4) { const g = (0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]) | 0; p[i] = g; hist[g]++; }
+    const total = p.length / 4; let acc = 0, lo = 0, hi = 255;
+    for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= total * 0.01) { lo = v; break; } }
+    acc = 0; for (let v = 255; v >= 0; v--) { acc += hist[v]; if (acc >= total * 0.01) { hi = v; break; } }
+    const k = hi > lo ? 255 / (hi - lo) : 1;
+    for (let i = 0; i < p.length; i += 4) { const g = Math.max(0, Math.min(255, ((p[i] - lo) * k) | 0)); p[i] = p[i + 1] = p[i + 2] = g; p[i + 3] = 255; }
+    x.putImageData(d, 0, 0); return c;
+  }
+  let worker = null, readerLoading = false;
+  async function getWorker() {
+    if (worker) return worker;
+    if (!window.Tesseract) throw new Error('lib');
+    readerLoading = true; renderTasks();
+    try {
+      const w = await Tesseract.createWorker('eng', 1, {});
+      await w.setParameters({ tessedit_pageseg_mode: (Tesseract.PSM && Tesseract.PSM.SPARSE_TEXT) || '11', preserve_interword_spaces: '1' });
+      worker = w; return w;
+    } finally { readerLoading = false; renderTasks(); }
+  }
+  async function ocrBest(blob, kind) {
+    const w = await getWorker(); let best = null, bestScore = -1;
+    for (const rot of [0, 90, 270]) {
+      const canvas = await toCanvas(blob, rot);
+      const r = await w.recognize(canvas);
+      const res = parseOcr(r.data.text, getLines(r.data), kind);
+      const score = (res.batch ? 1 : 0) + (res.mrp ? 1 : 0) + (res.expiry ? 1 : 0) + (res.mfg ? 1 : 0) + (res.shelf ? 1 : 0) + (kind === 'front' && res.name ? 2 : 0);
+      if (score > bestScore) { best = res; bestScore = score; }
+      if (kind === 'front' ? (res.name && !res.unsure.length) : score >= 2) break;
+    }
+    return best;
+  }
+
+  const norm = (v) => str(v).toUpperCase().replace(/[^A-Z0-9.]/g, '');
+  function merge(reads) {
+    const m = { name: '', batch: '', mrp: '', expiry: '', mfg: '', shelf: 0, calc: '', unsure: [] };
+    reads.forEach((r) => {
+      if (!r) return;
+      ['name', 'batch', 'mrp', 'expiry', 'mfg', 'shelf'].forEach((f) => {
+        const v = r[f]; if (!v) return;
+        if (!m[f]) m[f] = v;
+        else if (f !== 'name' && norm(m[f]) !== norm(v)) m.unsure.push({ field: f, why: 'The photos read differently: ' + m[f] + ' and ' + v });
+      });
+      r.unsure.forEach((u) => m.unsure.push(u));
+    });
+    if (!m.expiry && m.mfg && m.shelf) { m.expiry = addMonths(m.mfg, m.shelf); m.calc = 'Mfg ' + m.mfg + ' + ' + m.shelf + ' months'; }
+    return m;
+  }
+  function needsMore(m) {
+    if (m.expiry) return '';
+    if (m.mfg && !m.shelf) return 'Expiry is not printed here. Scan the line that gives the shelf life, such as "24 months from mfg".';
+    if (m.shelf && !m.mfg) return 'Shelf life is ' + m.shelf + ' months. Scan the manufacturing date.';
+    return 'Expiry was not found. Scan the expiry date, or the shelf-life line with the manufacturing date.';
+  }
+  function doubtsOf(m) {
+    const d = []; const add = (f, why) => { if (!d.some((x) => x.field === f)) d.push({ field: f, why }); };
+    m.unsure.forEach((u) => { if (u.field === 'mfg') { if (m.calc) add('expiry', 'Manufacturing date is unclear: ' + u.why); } else add(u.field, u.why); });
+    if (!m.name) add('name', 'Name not found');
+    if (!m.batch) add('batch', 'Batch not found'); else if (m.batch.length < 3) add('batch', 'Batch looks too short');
+    if (!num(m.mrp)) add('mrp', 'MRP not found');
+    if (!m.expiry) add('expiry', 'Expiry not found');
+    else if (m.mfg && mIndex(m.expiry) <= mIndex(m.mfg)) add('expiry', 'Expiry is not after the manufacturing date (' + m.mfg + ')');
+    return d;
+  }
+  /* ---------------- scan flow ---------------- */
+  const items = []; let cur = null, step = 0, target = null, active = 0;
+  const camInput = $('cam');
+  $('scanLabel').addEventListener('click', () => { target = null; });
+
+  function renderDock() {
+    $('s1').className = 'pill ' + (step === 0 ? 'on' : 'done'); $('s2').className = 'pill' + (step === 1 ? ' on' : '');
+    $('scanText').textContent = step === 0 ? 'Scan front' : 'Scan back';
+    $('stepHint').textContent = step === 0 ? 'Front of the pack: product name. Keep the text straight, in good light.' : 'Back of the pack: batch, MRP, expiry. Keep the text straight, in good light.';
+    $('cancelStep').hidden = step === 0 || $('scanLabel').hidden;
+  }
+  function addPhoto(it, file, kind) {
+    it.photos.push({ id: uid(), kind, blob: file, url: URL.createObjectURL(file), status: 'waiting', data: null, msg: '' });
+  }
+  camInput.addEventListener('change', () => {
+    const file = camInput.files && camInput.files[0]; camInput.value = ''; if (!file) { return; }
+    if (target) {
+      const it = target; target = null; if (it.dropped) return;
+      addPhoto(it, file, 'extra'); it.thirdDone = true; it.phase = 'reading'; renderTasks(); pump(); return;
+    }
+    if (!cur) {
+      cur = { id: uid(), sheetId: state.active, photos: [], phase: 'capturing', m: null, doubts: [], dropped: false, thirdDone: false, need: '' };
+      items.push(cur); addPhoto(cur, file, 'front'); step = 1; renderDock(); pump();
+    } else {
+      const it = cur; cur = null; step = 0; addPhoto(it, file, 'back'); it.phase = 'reading'; renderDock(); renderTasks(); pump(); resolveItem(it);
+    }
+  });
+  $('cancelStep').addEventListener('click', () => { if (cur) { dropItem(cur); cur = null; } step = 0; renderDock(); });
+
+  function dropItem(it) {
+    it.dropped = true; it.photos.forEach((p) => URL.revokeObjectURL(p.url));
+    const i = items.indexOf(it); if (i >= 0) items.splice(i, 1); renderTasks();
+  }
+  function pump() {
+    while (active < 1) {
+      let job = null;
+      for (const it of items) { if (it.dropped) continue; const p = it.photos.find((x) => x.status === 'waiting'); if (p) { job = [it, p]; break; } }
+      if (!job) break;
+      const [it, p] = job; p.status = 'reading'; active++;
+      readPhoto(it, p).then(() => { active--; pump(); });
+    }
+  }
+  async function readPhoto(it, p) {
+    try {
+      p.data = await ocrBest(p.blob, p.kind === 'front' ? 'front' : 'other'); p.status = 'done';
+    } catch (e) {
+      p.status = 'failed';
+      p.msg = e && e.message === 'lib' ? 'The reader could not load. Check your internet connection, then retry.' : 'Could not read that photo. Retry, or fill it in by hand.';
+    }
+    if (!it.dropped) resolveItem(it);
+  }
+  function resolveItem(it) {
+    if (it.dropped || it.phase === 'capturing') return;
+    if (it.photos.some((p) => p.status === 'waiting' || p.status === 'reading')) { it.phase = 'reading'; renderTasks(); return; }
+    const bad = it.photos.find((p) => p.status === 'failed');
+    if (bad) { it.phase = 'failed'; it.msg = bad.msg; renderTasks(); return; }
+    it.m = merge(it.photos.map((p) => p.data));
+    const more = !it.thirdDone ? needsMore(it.m) : '';
+    if (more) { it.phase = 'needs'; it.need = more; renderTasks(); return; }
+    it.doubts = doubtsOf(it.m);
+    if (it.doubts.length) { it.phase = 'check'; renderTasks(); return; }
+    commit(it);
+  }
+  function commit(it) {
+    const s = state.sheets.find((x) => x.id === it.sheetId) || sheet();
+    const m = it.m || {};
+    const r = cleanRow({ name: m.name, batch: m.batch, expiry: m.expiry, mrp: m.mrp, calc: m.calc });
+    s.rows.push(r); dropItem(it); touch();
+    if (s.id !== state.active) { toast('Added to ' + sheetLabel(s)); return; }
+    renderRows();
+    const tr = tbody.querySelector('tr[data-id="' + r.id + '"]');
+    if (tr) { tr.classList.add('flash'); tr.scrollIntoView({ block: 'center' }); setTimeout(() => tr.classList.remove('flash'), 2800); }
+  }
+
+  /* ---------------- task cards ---------------- */
+  const thumbs = (it) => '<div class="thumbs">' + it.photos.map((p) => '<img src="' + p.url + '" alt="Scanned photo">').join('') + '</div>';
+  const forTxt = (it) => (state.sheets.length > 1 ? '<div class="t-for">For ' + esc(sheetLabel(state.sheets.find((x) => x.id === it.sheetId) || sheet())) + '</div>' : '');
+  function sigOf(it) {
+    return [it.phase, it.photos.map((p) => p.status).join(','), it.msg || '', it.need || '', it.doubts.length, state.sheets.length, readerLoading ? 'L' : ''].join('|');
+  }
+  function buildCard(it) {
+    let cls = 'task', body = '';
+    if (it.phase === 'reading') {
+      body = '<div class="t-title">' + (readerLoading ? 'Loading the reader (first time only)…' : 'Reading…') + '</div><div class="bar-ind"></div>' + forTxt(it);
+    } else if (it.phase === 'failed') {
+      cls += ' attn';
+      body = '<div class="t-title">Could not read</div><div class="t-sub">' + esc(it.msg) + '</div><div class="t-actions"><button class="btn small" type="button" data-ta="retry">Retry</button><button class="btn small" type="button" data-ta="hand">Fill in by hand</button><button class="btn small ghost" type="button" data-ta="drop">Discard</button></div>';
+    } else if (it.phase === 'needs') {
+      cls += ' attn';
+      const nm = it.m && it.m.name ? it.m.name + ': ' : '';
+      body = '<div class="t-title">One more photo</div><div class="t-sub">' + esc(nm + it.need) + '</div>' + forTxt(it) +
+        '<div class="t-actions"><button class="btn small primary" type="button" data-ta="third">Scan</button><button class="btn small" type="button" data-ta="skip">Enter manually</button><button class="btn small ghost" type="button" data-ta="drop">Discard</button></div>';
+    } else if (it.phase === 'check') {
+      cls += ' attn';
+      const why = (f) => { const d = it.doubts.find((x) => x.field === f); return d ? '<small>' + esc(d.why) + '</small>' : ''; };
+      const fld = (f, label, cl, mode) => '<label class="' + cl + '">' + label + '<input type="text" data-tf="' + f + '" value="' + esc(it.m[f]) + '"' + (mode ? ' inputmode="' + mode + '"' : '') + ' class="' + (it.doubts.some((x) => x.field === f) ? 'need' : '') + '" autocomplete="off">' + why(f) + '</label>';
+      body = '<div class="t-title">Is this right?</div><div class="tf">' + fld('name', 'Name', 'wide') + fld('batch', 'Batch', '') + fld('expiry', 'Expiry (MM/YYYY)', '') + fld('mrp', 'MRP', '', 'decimal') + '</div>' +
+        (it.m.calc ? '<div class="t-sub">Expiry calculated: ' + esc(it.m.calc) + '</div>' : '') + forTxt(it) +
+        '<div class="t-actions"><button class="btn small primary" type="button" data-ta="ok">Yes, add it</button><button class="btn small ghost" type="button" data-ta="drop">Discard</button></div>';
+    }
+    const n = document.createElement('div'); n.className = cls; n.dataset.id = it.id; n.dataset.sig = sigOf(it);
+    n.innerHTML = thumbs(it) + '<div class="t-body">' + body + '</div>'; return n;
+  }
+  function renderTasks() {
+    const host = $('tasks');
+    const want = items.filter((i) => !i.dropped && i.phase !== 'capturing');
+    const have = new Map(Array.prototype.map.call(host.children, (n) => [n.dataset.id, n]));
+    want.forEach((it) => {
+      const sig = sigOf(it); const old = have.get(it.id);
+      if (!old) host.appendChild(buildCard(it));
+      else if (old.dataset.sig !== sig) host.replaceChild(buildCard(it), old);
+      have.delete(it.id);
+    });
+    have.forEach((n) => n.remove());
+    host.hidden = !want.length;
+  }
+  const itemOf = (el) => { const c = el.closest('.task'); return c ? items.find((i) => i.id === c.dataset.id) : null; };
+  $('tasks').addEventListener('input', (e) => {
+    const f = e.target.dataset && e.target.dataset.tf; if (!f) return; const it = itemOf(e.target); if (!it) return;
+    it.m[f] = e.target.value; if (f === 'expiry') it.m.calc = '';
+    e.target.classList.toggle('need', !e.target.value.trim() && it.doubts.some((x) => x.field === f));
+  });
+  $('tasks').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-ta]'); if (!b) return; const it = itemOf(b); if (!it) return;
+    const a = b.dataset.ta;
+    if (a === 'ok') commit(it);
+    else if (a === 'drop') dropItem(it);
+    else if (a === 'retry') { it.photos.forEach((p) => { if (p.status === 'failed') p.status = 'waiting'; }); it.phase = 'reading'; renderTasks(); pump(); }
+    else if (a === 'third') { target = it; camInput.click(); }
+    else if (a === 'skip' || a === 'hand') {
+      it.m = it.m || merge(it.photos.map((p) => p.data).filter(Boolean)); it.thirdDone = true; it.doubts = doubtsOf(it.m);
+      it.doubts.length ? (it.phase = 'check', renderTasks()) : commit(it);
+    }
+  });
+
+  /* ---------------- PDF ---------------- */
+  function drawHeader(doc, sh) {
+    const W = doc.internal.pageSize.getWidth();
+    doc.setTextColor(0); doc.setDrawColor(0);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.text('EXPIRY/BREAKAGE GOODS FORMAT', W / 2, 12, { align: 'center' });
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+    doc.text('TO', 10, 19); doc.text('DEALER TYPE', 132, 19); doc.text('FROM', 168, 19);
+    const types = ['registered', 'unregistered', 'composition'], labels = ['REGISTERED', 'UNREGISTERED', 'COMPOSITION'];
+    for (let i = 0; i < 3; i++) {
+      const y = 25 + i * 6;
+      doc.setLineWidth(0.15); doc.setLineDashPattern([0.4, 0.8], 0); doc.line(10, y, 131, y); doc.line(175, y, 287, y); doc.setLineDashPattern([], 0);
+      doc.text(labels[i], 132, y - 0.8); doc.text(state.dealer === types[i] ? '(X)' : '(  )', 168, y - 0.8);
+      doc.text(sh.to[i] || '', 11, y - 1, { maxWidth: 118 }); doc.text(state.from[i] || '', 177, y - 1, { maxWidth: 108 });
+    }
+    doc.text('GST/PAN- ' + sh.toGst, 10, 43); doc.text('GST/PAN- ' + state.fromGst, 168, 43);
+    doc.setLineWidth(0.4); doc.line(8, 46, W - 8, 46);
+    doc.setFontSize(8); doc.text('PLEASE RECEIVE FOLLOWING EXPIRED/BREAKAGE/NON-SALEABLE GOODS.', 10, 51);
+  }
+  function buildPdf(list) {
+    const jsPDF = window.jspdf && window.jspdf.jsPDF; if (!jsPDF || !window.jspdf) throw new Error('lib');
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(); const ranges = [];
+    list.forEach((sh, si) => {
+      if (si > 0) doc.addPage(); const start = doc.getNumberOfPages();
+      drawHeader(doc, sh);
+      let total = 0;
+      const body = sh.rows.map((r, i) => { const a = amt(r); total += a; return [String(i + 1), r.name, r.hsn, r.batch, r.expiry, r.qty, num(r.mrp) ? fmt(num(r.mrp)) : r.mrp, r.g1, r.g2, a ? fmt(a) : '']; });
+      doc.autoTable({
+        startY: 54, margin: { top: 14, left: 10, right: 10, bottom: 14 }, theme: 'grid',
+        head: [['S.No.', 'PRODUCT', 'HSN CODE', 'BATCH', 'EXPIRY', 'QTY+FREE', 'MRP', 'PAID GST', 'PAID GST', 'AMOUNT']],
+        body,
+        foot: [[{ content: 'GRAND TOTAL', colSpan: 9, styles: { halign: 'right' } }, fmt(Math.round(total * 100) / 100)]],
+        showFoot: 'lastPage',
+        styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.6, lineColor: [0, 0, 0], lineWidth: 0.2, textColor: [0, 0, 0], valign: 'middle' },
+        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
+        footStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'right' },
+        columnStyles: { 0: { cellWidth: 12, halign: 'center' }, 1: { cellWidth: 70 }, 2: { cellWidth: 22 }, 3: { cellWidth: 28 }, 4: { cellWidth: 22, halign: 'center' }, 5: { cellWidth: 20, halign: 'center' }, 6: { cellWidth: 24, halign: 'right' }, 7: { cellWidth: 20, halign: 'right' }, 8: { cellWidth: 24, halign: 'right' }, 9: { cellWidth: 35, halign: 'right' } },
+        didDrawPage: (d) => { if (d.pageNumber > start) { doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.text((sh.to[0] || 'Dealer') + ' (continued)', 10, 9); } }
+      });
+      let y = doc.lastAutoTable.finalY + 8;
+      if (y > H - 30) { doc.addPage(); y = 20; }
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      doc.text('KINDLY ISSUE CREDIT NOTE & ADJUST IN OUR FUTURE INVOICES AS PER GST ACT.', 10, y); doc.text('THANKS', 10, y + 5); doc.text('SEAL & SIGNATURE', 225, y + 14);
+      ranges.push([start, doc.getNumberOfPages()]);
+    });
+    ranges.forEach(([a, b]) => { if (b > a) for (let p = a; p <= b; p++) { doc.setPage(p); doc.setFontSize(8); doc.text('Page ' + (p - a + 1) + ' of ' + (b - a + 1), W - 10, H - 6, { align: 'right' }); } });
+    return doc.output('arraybuffer');
+  }
+  const stamp = () => { const d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); };
+  async function exportPdf(all) {
+    const list = (all ? state.sheets : [sheet()]).filter((s) => s.rows.length); if (!list.length) return;
+    let buf; try { buf = buildPdf(list); } catch (e) { return toast('The PDF tool did not load. Check your internet connection and reload.'); }
+    const label = all ? 'all-dealers' : (sheetLabel(list[0]).replace(/[^\w\-]+/g, '-').slice(0, 30) || 'dealer');
+    const name = 'Expiry-return-' + label + '-' + stamp() + '.pdf';
+    const blob = new Blob([buf], { type: 'application/pdf' });
+    try {
+      const file = new File([blob], name, { type: 'application/pdf' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+  $('pdfAll').addEventListener('click', () => exportPdf(true));
+  $('pdfOne').addEventListener('click', () => exportPdf(false));
+
+  renderAll(); renderDock();
+})();
+</script>
+</body>
+</html>
